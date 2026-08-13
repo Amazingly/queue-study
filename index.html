@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Queue Decision Study</title>
+<style>
+:root {
+    --ink: #17212b; --muted: #5b6670; --line: #d7dee6; --panel: #f6f8fa;
+    --accent: #0f766e; --accent-dark: #0b5c55; --warn: #9a3412;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body.modal-open { overflow: hidden; }
+body { color: var(--ink); background: #fff; font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.55; margin: 0; padding: 60px 18px 18px; }
+.instr-fab { position: fixed; top: 12px; right: 12px; z-index: 60; display: none; padding: 9px 15px; font-size: .9rem; border-radius: 999px; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+.instr-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,.35); z-index: 59; display: none; }
+.instr-backdrop.open { display: block; }
+.instr-panel { position: fixed; top: 0; right: 0; height: 100%; width: 460px; max-width: 94vw; background: #fff; border-left: 1px solid var(--line); box-shadow: -6px 0 24px rgba(0,0,0,.15); z-index: 61; transform: translateX(102%); transition: transform .18s ease; display: flex; flex-direction: column; }
+.instr-panel.open { transform: translateX(0); }
+.instr-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.instr-body { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 16px 30px; }
+.instr-body .card { margin-bottom: 12px; }
+.instr-note { font-size: .85rem; color: var(--muted); margin: 0 0 10px; }
+.shell { max-width: 760px; margin: 0 auto; }
+.card { border: 1px solid var(--line); border-radius: 8px; padding: 22px; background: #fff; margin-bottom: 18px; }
+.band { border-left: 4px solid var(--accent); background: var(--panel); padding: 12px 16px; margin: 16px 0; }
+.muted { color: var(--muted); }
+.formula { font-family: ui-monospace, Menlo, Consolas, monospace; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-wrap: anywhere; }
+	.status { display: flex; flex-wrap: wrap; gap: 8px 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 10px 14px; margin-bottom: 14px; font-size: .95rem; }
+	.step-progress { margin: 0 0 14px; }
+	.step-progress .top { display: flex; justify-content: space-between; gap: 12px; font-size: .85rem; color: var(--muted); margin-bottom: 5px; }
+	.step-progress .track { height: 8px; border-radius: 999px; background: #e5eaf0; overflow: hidden; }
+	.step-progress .bar { height: 100%; background: var(--accent); width: 0%; }
+	button { border: 0; border-radius: 7px; background: var(--accent); color: #fff; padding: 13px 18px; font-weight: 700; font-size: 1rem; cursor: pointer; min-height: 46px; touch-action: manipulation; -webkit-appearance: none; }
+button:hover { background: var(--accent-dark); }
+button.secondary { background: #475569; }
+button.secondary:hover { background: #334155; }
+button:disabled { opacity: .5; cursor: default; }
+.choices { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+.case-label { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-weight: 700; background: var(--panel); }
+.metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 12px 0; }
+.metric { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--panel); }
+.metric strong { display: block; font-size: 1.3rem; }
+.q { margin: 16px 0; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.q:last-child { border-bottom: 0; }
+.q p { margin: 4px 0 8px; font-weight: 600; }
+label.opt { display: flex; align-items: center; gap: 10px; margin: 2px 0; padding: 9px 10px; min-height: 46px; border-radius: 8px; font-weight: 400; cursor: pointer; touch-action: manipulation; }
+label.opt:hover, label.opt:active { background: var(--panel); }
+label.opt input[type="radio"] { width: 20px; height: 20px; flex: none; margin: 0; }
+input[type="number"], select, textarea, input[type="text"] { width: 100%; max-width: 420px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 16px; font-family: inherit; min-height: 46px; }
+select { -webkit-appearance: none; appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 34px; }
+input[type="number"] { max-width: 140px; }
+textarea { max-width: 100%; min-height: 70px; }
+	.error { color: var(--warn); font-weight: 700; }
+	.quiz-feedback { border: 1px solid #fed7aa; background: #fff7ed; border-radius: 8px; padding: 12px 14px; margin: 14px 0; }
+	.quiz-feedback h4 { margin: 0 0 8px; }
+	.quiz-feedback .item { margin: 10px 0; }
+	.quiz-feedback .item strong { display: block; }
+	.timer { font-weight: 700; color: var(--warn); }
+	.feedback-good { color: var(--accent-dark); font-weight: 700; }
+	.feedback-zero { color: var(--muted); font-weight: 700; }
+	.quality-note { font-size: .9rem; color: var(--muted); }
+.lang-row { display: flex; gap: 12px; margin-top: 20px; }
+.progress { font-size: .85rem; color: var(--muted); margin-bottom: 8px; }
+code.big { font-size: 1.4rem; font-weight: 700; letter-spacing: 1px; }
+@media (max-width: 640px) {
+    body { padding: 56px 12px 12px; }
+    .card { padding: 16px; }
+    .choices button { width: 100%; }
+    .instr-panel { width: 100%; max-width: 100%; }
+    .instr-fab { top: 8px; right: 8px; padding: 8px 12px; font-size: .85rem; min-height: 40px; }
+    .instr-head button { width: auto; min-height: 40px; }
+    .status { font-size: .9rem; gap: 6px 14px; }
+    .metric-grid { grid-template-columns: 1fr 1fr; }
+    /* Keep the two decision buttons reachable without scrolling on small screens. */
+    .decision-actions { position: sticky; bottom: 0; z-index: 5; background: #fff; padding: 10px 0 6px; margin-top: 14px; box-shadow: 0 -8px 12px -8px rgba(0,0,0,.25); }
+    h2 { font-size: 1.3rem; } h3 { font-size: 1.1rem; }
+}
+@media (max-width: 380px) { .metric-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="shell" id="app"></div>
+
+<script>
+"use strict";
+
+/* =========================================================================
+   CONFIG — the only line a researcher must edit (see SETUP_GUIDE.md):
+   paste your Google Apps Script web-app URL between the quotes.
+   ========================================================================= */
+var CONFIG = {
+    ENDPOINT_URL: "https://script.google.com/macros/s/AKfycbzNVaKdK1w6Xo_6vPqW5mgnCczEy3TuGZVSqwhpSYtROVPN35pGc0fOSt6okQMrXPvOwQ/exec",
+    FIXED_VND: 50000,          // fixed participation payment
+    POINTS_PER_10000_VND: 100, // 100 points = 10,000 VND
+    NUM_ROUNDS: 20,
+    H_PROB: 0.40,              // each case is independently Type H with 40% probability
+    H_VALUE: 120, L_VALUE: 0, MIXED_EV: 48,
+    WAIT_LOW: 30, WAIT_HIGH: 70,
+    START_BALANCE: 300,
+    RECOVERY_PROB: 0.5,        // strained load recovers after rounds with no H service
+    // Planner-side primitives (logged only; never shown or paid to participants).
+    // Chosen so BOTH core results of the paper hold at the configured entry
+    // parameters: the canonical reversal J(fine) > J(coarse) (Theorem 4.2,
+    // inequality (45)) AND strict optimality of state-dependent disclosure
+    // J(state_dependent) < J(coarse) (absorbability prescription). V_L < 0
+    // encodes that serving a no-value case is operational waste (r_L < 0,
+    // l_L ~ 0), which gives label revelation a screening benefit at normal
+    // load and a burden cost at strained load.
+    FATIGUE_COST_HIGH: 240,    // D: per-round planner cost of strained load
+    SOCIAL_VALUE_H: 90,        // V_H: noncapacity value of serving H
+    SOCIAL_VALUE_L: -20,       // V_L: noncapacity value of serving L (waste)
+    DECISION_SECONDS: 60,
+    BELIEF_MAX: 10
+};
+
+/* ============================ Translations ============================ */
+var T = {
+    vi: {
+	        welcome_title: "Nghiên cứu về quyết định gửi hồ sơ",
+	        welcome_body: "Cảm ơn bạn tham gia nghiên cứu này. Nghiên cứu kéo dài khoảng 15–20 phút. Bạn nhận khoản tiền tham gia cố định là {FIXED} VND. Ngoài ra bạn nhận tiền thưởng theo số điểm kiếm được: {CONV} điểm = 10.000 VND. Mọi khoản thanh toán đều riêng tư. Việc tham gia là tự nguyện; bạn có thể dừng bất kỳ lúc nào. Các câu trả lời được bảo mật và chỉ dùng cho mục đích nghiên cứu. Việc tham gia và thu nhập không ảnh hưởng đến điểm số, học bổng hay quan hệ của bạn với trường.",
+	        welcome_note: "Vui lòng làm nghiên cứu trong một cửa sổ trình duyệt, không dùng nút quay lại, và hoàn thành trong một lần nếu có thể. Nếu trang bị tải lại giữa chừng, hệ thống sẽ cố gắng khôi phục phiên đang làm.",
+	        welcome_continue: "Tôi đồng ý tham gia",
+	        progress_language: "Chọn ngôn ngữ", progress_consent: "Đồng ý tham gia", progress_instructions: "Hướng dẫn", progress_quiz: "Kiểm tra hiểu", progress_rounds: "Vòng quyết định", progress_beliefs: "Ước đoán", progress_survey: "Bảng hỏi", progress_done: "Hoàn thành",
+	        inst1_title: "Vai trò của bạn",
+	        inst1_body: "Trong mỗi vòng, bạn nhận một hồ sơ và quyết định có gửi hồ sơ vào hệ thống xử lý hay không. Có {N} vòng. Bạn bắt đầu với {START} điểm.",
+        inst2_title: "Loại hồ sơ",
+        inst2_body: "Hồ sơ loại H có giá trị {H} điểm nếu được xử lý. Hồ sơ loại L có giá trị {L} điểm nếu được xử lý. Một hồ sơ chưa được xác định trên màn hình là loại H hay loại L được gọi là hồ sơ hỗn hợp: có xác suất 40% là loại H và 60% là loại L, nên giá trị kỳ vọng là 0,40×{H} + 0,60×{L} = {EV} điểm.",
+        inst3_title: "Chi phí chờ và tải dịch vụ",
+        inst3_body: "Mỗi vòng hiển thị tải dịch vụ hiện tại. Khi tải bình thường, chi phí chờ là {WL} điểm. Khi tải căng, chi phí chờ là {WH} điểm. Nếu bạn gửi hồ sơ, hồ sơ được xử lý ngay và điểm = giá trị hồ sơ − chi phí chờ hiện tại. Nếu bạn không gửi, điểm từ hồ sơ đó là 0.",
+	        inst4_title: "Tải dịch vụ thay đổi như thế nào",
+	        inst4_body: "Hồ sơ loại H là hồ sơ có gánh nặng cao cho hệ thống. Nếu một hồ sơ loại H được xử lý, tải dịch vụ ở vòng tiếp theo trở nên căng. Khi hệ thống đang căng và không có hồ sơ loại H nào được xử lý trong vòng đó, tải dịch vụ hồi phục về bình thường với xác suất {RP}%. Quy tắc này không phụ thuộc vào quyết định trước đó ngoài việc có xử lý hồ sơ loại H hay không.",
+	        inst5_title: "Ví dụ tính điểm",
+	        inst5_body: "Nếu tải bình thường, gửi hồ sơ loại H trả {HN} điểm và gửi hồ sơ hỗn hợp có giá trị kỳ vọng {MN} điểm. Nếu tải căng, gửi hồ sơ loại H trả {HS} điểm, còn gửi hồ sơ hỗn hợp có giá trị kỳ vọng {MS} điểm. Gửi hồ sơ loại L luôn làm mất điểm vì giá trị của nó là 0.",
+	        quiz_title: "Câu hỏi kiểm tra",
+	        quiz_intro: "Vui lòng trả lời đúng tất cả câu hỏi trước khi bắt đầu các vòng có trả thưởng. Bạn có thể thử lại.",
+	        quiz_error: "Một số câu trả lời chưa đúng. Bạn có thể sửa câu trả lời hoặc xem lại hướng dẫn.",
+	        quiz_feedback_title: "Giải thích câu trả lời",
+	        quiz_selected: "Bạn đã chọn:",
+	        quiz_correct: "Đáp án đúng:",
+	        review_instructions: "Xem lại hướng dẫn",
+	        q1: "Nếu bạn không gửi hồ sơ, điểm từ hồ sơ đó là bao nhiêu?",
+	        q2: "Hồ sơ loại H có giá trị bao nhiêu điểm nếu được xử lý?",
+	        q3: "Hồ sơ hỗn hợp có xác suất là loại H là bao nhiêu?",
+	        q4: "Giá trị kỳ vọng của hồ sơ hỗn hợp là bao nhiêu?",
+	        q5: "Nếu hồ sơ loại H được xử lý khi tải dịch vụ căng, điểm là bao nhiêu?",
+	        q6: "Nếu hồ sơ loại H được xử lý, điều gì xảy ra với tải dịch vụ ở vòng tiếp theo?",
+	        q1_explain: "Nếu bạn không gửi, hồ sơ không được xử lý và điểm từ hồ sơ đó bằng 0.",
+	        q2_explain: "Theo hướng dẫn, hồ sơ loại H có giá trị 120 điểm nếu được xử lý.",
+	        q3_explain: "Hồ sơ hỗn hợp có xác suất 40% là loại H và 60% là loại L.",
+	        q4_explain: "Giá trị kỳ vọng của hồ sơ hỗn hợp là 0,40×120 + 0,60×0 = 48 điểm.",
+	        q5_explain: "Khi tải căng, chi phí chờ là 70 điểm. Hồ sơ loại H trả 120 − 70 = 50 điểm.",
+	        q6_explain: "Hồ sơ loại H là hồ sơ có gánh nặng cao. Nếu được xử lý, tải dịch vụ ở vòng tiếp theo trở nên căng.",
+        points: "điểm",
+        round: "Vòng",
+        balance: "Số điểm hiện tại",
+        case_mixed: "Hồ sơ hỗn hợp", case_h: "Hồ sơ loại H", case_l: "Hồ sơ loại L",
+        mixed_text: "Hồ sơ này không được xác định trên màn hình là loại H hay loại L. Có xác suất 40% là loại H và 60% là loại L. Giá trị kỳ vọng: {EV} điểm.",
+        h_text: "Hồ sơ này là loại H. Nếu được xử lý, hồ sơ có giá trị {H} điểm.",
+        l_text: "Hồ sơ này là loại L. Nếu được xử lý, hồ sơ có giá trị {L} điểm.",
+        ev_line_mixed: "Điểm kỳ vọng nếu gửi: {EV} − {W} = {X}",
+        ev_line_exact: "Điểm nếu gửi: {V} − {W} = {X}",
+        units_line: "Tải dịch vụ hiện tại:",
+        charge_line: "Chi phí chờ vòng này: {W} điểm",
+        load: "Tải dịch vụ",
+        load_normal: "Bình thường",
+        load_strained: "Căng",
+        choose: "Chọn một phương án:",
+        send: "Gửi vào hệ thống", not_send: "Không gửi",
+        timeout_note: "Nếu hết thời gian mà bạn chưa chọn, hồ sơ này sẽ không được gửi.",
+        time_left: "Thời gian còn lại:",
+        fb_served: "Hồ sơ đã được xử lý. Điểm: {X}. Tải vòng sau: {LOAD}.",
+        fb_unserved: "Không có hồ sơ loại H được xử lý trong vòng này. Điểm: 0. Tải vòng sau: {LOAD}.",
+        fb_notsent: "Bạn không gửi hồ sơ. Điểm: 0. Tải vòng sau: {LOAD}.",
+        fb_timeout: "Hết thời gian — hồ sơ không được gửi. Điểm: 0. Tải vòng sau: {LOAD}.",
+        next_round: "Vòng tiếp theo",
+        to_beliefs: "Tiếp tục",
+        beliefs_title: "Hai câu hỏi ước đoán",
+        beliefs_intro: "Trước khi xem kết quả, vui lòng trả lời hai câu hỏi. Mỗi câu có thể mang lại tối đa {M} điểm: bạn nhận {M} điểm nếu đoán đúng chính xác, trừ 1 điểm cho mỗi đơn vị chênh lệch (thấp nhất 0 điểm). Số điểm này được cộng vào tiền thưởng.",
+        belief1: "Trong {N} hồ sơ bạn nhận được, bạn đoán có bao nhiêu hồ sơ thực sự là loại H? (0–{N})",
+        belief2: "Trong {N} vòng, bạn đoán có bao nhiêu hồ sơ loại H của bạn đã được xử lý? (0–{N})",
+        belief_submit: "Gửi câu trả lời",
+        belief_error: "Vui lòng nhập số trong khoảng cho phép ở cả hai câu.",
+        results_title: "Kết quả của bạn",
+        r_market: "Điểm từ các vòng quyết định", r_belief: "Điểm từ câu hỏi ước đoán", r_total: "Tổng điểm",
+        r_bonus: "Tiền thưởng của bạn:", r_floor: "Tổng điểm âm được tính là 0 khi quy đổi.",
+        quest_title: "Bảng câu hỏi ngắn",
+	        quest_intro: "Bảng câu hỏi không thay đổi thu nhập của bạn.",
+	        lik1: "Việc hiểu nhãn hồ sơ khó đến mức nào? 1 = rất dễ, 7 = rất khó.",
+	        lik2: "Nhãn hồ sơ ảnh hưởng đến quyết định của bạn đến mức nào? 1 = không ảnh hưởng, 7 = ảnh hưởng rất mạnh.",
+	        lik3: "Tải dịch vụ và chi phí chờ ảnh hưởng đến quyết định của bạn đến mức nào? 1 = không ảnh hưởng, 7 = ảnh hưởng rất mạnh.",
+	        attention: "Để kiểm tra chất lượng dữ liệu, vui lòng chọn số 4 cho câu này.",
+        understood: "Bạn có hiểu cách tính điểm từ hồ sơ không?",
+        believed: "Bạn có tin thông tin hiển thị trên màn hình không?",
+        yes: "Có", no: "Không", unsure: "Không chắc",
+        strategy: "Bạn đã quyết định có gửi hồ sơ như thế nào?",
+        confusing: "Có phần nào khó hiểu không? (không bắt buộc)",
+        demo_title: "Thông tin về bạn",
+        demo_intro: "Các câu trả lời được bảo mật, chỉ dùng cho nghiên cứu và không ảnh hưởng đến thu nhập của bạn.",
+        age: "Tuổi của bạn", gender: "Giới tính của bạn",
+        female: "Nữ", male: "Nam", other: "Khác", prefer_not: "Không muốn trả lời",
+        field: "Ngành học chính của bạn",
+        f1: "Kinh tế / Kinh doanh / Quản trị", f2: "Khoa học tự nhiên / Kỹ thuật / CNTT", f3: "Khoa học xã hội khác", f4: "Nhân văn / Ngôn ngữ", f5: "Khác",
+        year: "Bạn đang học năm thứ mấy?",
+        y1: "Năm thứ nhất", y2: "Năm thứ hai", y3: "Năm thứ ba", y4: "Năm thứ tư", y5: "Năm thứ năm trở lên / Sau đại học",
+        prior: "Bạn đã từng tham gia thí nghiệm có trả thưởng trước đây chưa?",
+        risk: "Nhìn chung, bạn là người sẵn sàng chấp nhận rủi ro hay cố gắng tránh rủi ro? 0 = hoàn toàn không sẵn sàng, 10 = rất sẵn sàng.",
+        patience: "Nhìn chung, bạn sẵn sàng đến mức nào trong việc từ bỏ một lợi ích hôm nay để nhận lợi ích lớn hơn trong tương lai? 0 = hoàn toàn không sẵn sàng, 10 = rất sẵn sàng.",
+        form_error: "Vui lòng trả lời tất cả các câu hỏi bắt buộc.",
+        submit_all: "Hoàn thành",
+	        sending: "Đang gửi dữ liệu...",
+	        done_title: "Hoàn thành!",
+	        done_body: "Cảm ơn bạn đã tham gia. Mã hoàn thành của bạn là:",
+	        done_keep: "Vui lòng lưu lại mã này và gửi cho nhóm nghiên cứu để nhận thanh toán: tiền tham gia {FIXED} VND + tiền thưởng {BONUS} VND.",
+	        upload_attempted: "Dữ liệu đã được gửi tới bảng tính nếu đường dẫn thu thập dữ liệu đã được cấu hình đúng. Vì trình duyệt không xác nhận được trạng thái gửi, mã hoàn thành và dữ liệu dự phòng vẫn được hiển thị bên dưới.",
+	        upload_missing: "Đường dẫn thu thập dữ liệu chưa được cấu hình trong file HTML. Vui lòng sao chép dữ liệu dự phòng bên dưới và gửi cho nhóm nghiên cứu.",
+	        fallback: "Dữ liệu dự phòng nếu cần đối chiếu thanh toán hoặc khôi phục bản ghi:",
+	        copy: "Sao chép dữ liệu",
+	        copied: "Đã sao chép.",
+	        instructions_button: "Hướng dẫn",
+	        instructions_panel_title: "Hướng dẫn thí nghiệm",
+	        instr_close: "Đóng",
+	        instr_hint: "Bạn có thể mở lại toàn bộ hướng dẫn bất cứ lúc nào bằng nút “Hướng dẫn” ở góc trên bên phải màn hình. Trong các vòng quyết định, đồng hồ đếm ngược sẽ tạm dừng trong khi bảng hướng dẫn đang mở, nên việc xem lại hướng dẫn không làm bạn mất thời gian quyết định.",
+	        instr_panel_note: "Nội dung dưới đây giống hệt phần hướng dẫn bạn đã đọc trước khi bắt đầu.",
+	        recover_title: "Khôi phục phiên đang làm",
+	        recover_body: "Trình duyệt tìm thấy một phiên chưa hoàn thành với mã {CODE}. Bạn có thể tiếp tục từ điểm gần nhất đã lưu. Nếu bạn bắt đầu lại, phiên cũ sẽ bị xóa khỏi trình duyệt này.",
+	        resume: "Tiếp tục phiên cũ",
+	        restart: "Bắt đầu lại",
+	        continue_btn: "Tiếp tục"
+    },
+    en: {
+	        welcome_title: "Queue Decision Study",
+	        welcome_body: "Thank you for taking part. The study lasts about 15–20 minutes. You receive a fixed participation payment of {FIXED} VND, plus a bonus based on the points you earn: {CONV} points = 10,000 VND. All payments are private. Participation is voluntary; you may stop at any time. Answers are confidential and used for research only. Participation and earnings do not affect grades, scholarships, or your relationship with the university.",
+	        welcome_note: "Please complete the study in one browser window, do not use the back button, and finish in one sitting if possible. If the page reloads mid-study, the system will try to recover your saved session.",
+	        welcome_continue: "I agree to take part",
+	        progress_language: "Language", progress_consent: "Consent", progress_instructions: "Instructions", progress_quiz: "Comprehension", progress_rounds: "Decision rounds", progress_beliefs: "Estimates", progress_survey: "Survey", progress_done: "Finished",
+	        inst1_title: "Your role",
+        inst1_body: "In each round you receive one case and decide whether to send it to a processing system. There are {N} rounds. You start with {START} points.",
+        inst2_title: "Case types",
+        inst2_body: "A Type H case is worth {H} points if processed. A Type L case is worth {L} points if processed. A case not identified on screen as H or L is called a Mixed case: it is Type H with 40% probability and Type L with 60%, so its expected value is 0.40×{H} + 0.60×{L} = {EV} points.",
+        inst3_title: "Waiting cost and service load",
+        inst3_body: "Each round shows the current service load. Under normal load, the waiting cost is {WL} points. Under strained load, the waiting cost is {WH} points. If you send the case, it is processed immediately and points = case value − current waiting cost. If you do not send, the case pays 0.",
+	        inst4_title: "How service load changes",
+	        inst4_body: "Type H cases are high-burden cases for the service system. If a Type H case is processed, next round's service load becomes strained. When the system is already strained and no Type H case is processed in that round, service load recovers to normal with probability {RP}%. This rule depends only on whether a Type H case was processed.",
+	        inst5_title: "Payoff examples",
+	        inst5_body: "Under normal load, sending a Type H case pays {HN} points and sending a Mixed case has expected value {MN} points. Under strained load, sending a Type H case pays {HS} points, while sending a Mixed case has expected value {MS} points. Sending a Type L case always loses points because its value is 0.",
+	        quiz_title: "Comprehension check",
+	        quiz_intro: "Please answer all questions correctly before the paid rounds begin. You may retry.",
+	        quiz_error: "Some answers are not correct. You may change your answers or review the instructions.",
+	        quiz_feedback_title: "Answer explanations",
+	        quiz_selected: "You selected:",
+	        quiz_correct: "Correct answer:",
+	        review_instructions: "Review instructions",
+	        q1: "If you do not send a case, what does that case pay?",
+	        q2: "A Type H case is worth how many points if processed?",
+	        q3: "A Mixed case has what chance of being Type H?",
+	        q4: "What is the expected value of a Mixed case?",
+	        q5: "If a Type H case is processed under strained service load, what does it pay?",
+	        q6: "If a Type H case is processed, what happens to next round's service load?",
+	        q1_explain: "If you do not send the case, it is not processed and the payoff from that case is 0.",
+	        q2_explain: "The instructions state that a Type H case is worth 120 points if processed.",
+	        q3_explain: "A Mixed case is Type H with 40% probability and Type L with 60% probability.",
+	        q4_explain: "The expected value of a Mixed case is 0.40×120 + 0.60×0 = 48 points.",
+	        q5_explain: "Under strained load, the waiting cost is 70 points. A processed Type H case pays 120 − 70 = 50 points.",
+	        q6_explain: "Type H cases are high-burden cases. If a Type H case is processed, next round's service load becomes strained.",
+        points: "points",
+        round: "Round",
+        balance: "Current balance",
+        case_mixed: "Mixed case", case_h: "Type H case", case_l: "Type L case",
+        mixed_text: "This case is not identified on screen as Type H or L. It is Type H with 40% probability and Type L with 60%. Expected value: {EV} points.",
+        h_text: "This case is Type H. If processed, it is worth {H} points.",
+        l_text: "This case is Type L. If processed, it is worth {L} points.",
+        ev_line_mixed: "Expected points if sent: {EV} − {W} = {X}",
+        ev_line_exact: "Points if sent: {V} − {W} = {X}",
+        units_line: "Current service load:",
+        charge_line: "Waiting cost this round: {W} points",
+        load: "Service load",
+        load_normal: "Normal",
+        load_strained: "Strained",
+        choose: "Choose one:",
+        send: "Send", not_send: "Do not send",
+        timeout_note: "If time runs out before you choose, this case will not be sent.",
+        time_left: "Time remaining:",
+        fb_served: "The case was processed. Points: {X}. Next load: {LOAD}.",
+        fb_unserved: "No Type H case was processed this round. Points: 0. Next load: {LOAD}.",
+        fb_notsent: "You did not send the case. Points: 0. Next load: {LOAD}.",
+        fb_timeout: "Time ran out — the case was not sent. Points: 0. Next load: {LOAD}.",
+        next_round: "Next round",
+        to_beliefs: "Continue",
+        beliefs_title: "Two estimation questions",
+        beliefs_intro: "Before seeing your results, please answer two questions. Each can earn up to {M} points: {M} points for an exactly correct guess, minus 1 point per unit of difference (never below 0). These points are added to your bonus.",
+        belief1: "Out of your {N} cases, how many do you think were actually Type H? (0–{N})",
+        belief2: "Out of the {N} rounds, how many of your Type H cases do you think were processed? (0–{N})",
+        belief_submit: "Submit answers",
+        belief_error: "Please enter numbers within the allowed range for both questions.",
+        results_title: "Your results",
+        r_market: "Points from the decision rounds", r_belief: "Points from the estimation questions", r_total: "Total points",
+        r_bonus: "Your bonus payment:", r_floor: "A negative total counts as 0 for the bonus.",
+        quest_title: "Short questionnaire",
+	        quest_intro: "The questionnaire does not change your earnings.",
+	        lik1: "How difficult was it to understand the case labels? 1 = very easy, 7 = very difficult.",
+	        lik2: "How much did the case label affect your decisions? 1 = not at all, 7 = very strongly.",
+	        lik3: "How much did service load and waiting cost affect your decisions? 1 = not at all, 7 = very strongly.",
+	        attention: "For data quality, please select 4 on this item.",
+        understood: "Did you understand how case points were calculated?",
+        believed: "Did you believe the information shown on screen?",
+        yes: "Yes", no: "No", unsure: "Not sure",
+        strategy: "In your own words, how did you decide whether to send a case?",
+        confusing: "Was anything difficult to understand? (optional)",
+        demo_title: "About you",
+        demo_intro: "These answers are confidential, used for research only, and do not affect your earnings.",
+        age: "Your age", gender: "Your gender",
+        female: "Female", male: "Male", other: "Other", prefer_not: "Prefer not to say",
+        field: "Your main field of study",
+        f1: "Economics / Business / Management", f2: "Natural sciences / Engineering / IT", f3: "Other social sciences", f4: "Humanities / Languages", f5: "Other",
+        year: "Which year of study are you in?",
+        y1: "First year", y2: "Second year", y3: "Third year", y4: "Fourth year", y5: "Fifth year or above / Postgraduate",
+        prior: "Have you participated in a paid experiment before?",
+        risk: "In general, how willing are you to take risks? 0 = completely unwilling, 10 = very willing.",
+        patience: "In general, how willing are you to give up something beneficial today in order to benefit more in the future? 0 = completely unwilling, 10 = very willing.",
+        form_error: "Please answer all required questions.",
+        submit_all: "Finish",
+	        sending: "Sending data...",
+	        done_title: "Finished!",
+	        done_body: "Thank you for participating. Your completion code is:",
+	        done_keep: "Please keep this code and send it to the research team to receive your payment: {FIXED} VND participation + {BONUS} VND bonus.",
+	        upload_attempted: "Your data have been sent to the spreadsheet if the collection link is configured correctly. Because browsers do not confirm this upload status, your completion code and backup data remain available below.",
+	        upload_missing: "The data-collection link is not configured in this HTML file. Please copy the backup data below and send it to the research team.",
+	        fallback: "Backup data for payment matching or record recovery:",
+	        copy: "Copy data",
+	        copied: "Copied.",
+	        instructions_button: "Instructions",
+	        instructions_panel_title: "Experiment instructions",
+	        instr_close: "Close",
+	        instr_hint: "You can reopen the full instructions at any time with the “Instructions” button in the top-right corner. During the decision rounds the countdown pauses while the instructions panel is open, so consulting them costs you no decision time.",
+	        instr_panel_note: "The text below is identical to the instructions you read before starting.",
+	        recover_title: "Recover saved session",
+	        recover_body: "This browser found an unfinished session with code {CODE}. You can continue from the most recently saved point. Starting over will erase the saved session in this browser.",
+	        resume: "Resume saved session",
+	        restart: "Start over",
+	        continue_btn: "Continue"
+    }
+};
+
+/* ============================ Utilities ============================ */
+function fmt(s, map) {
+    return s.replace(/\{(\w+)\}/g, function (_, k) { return (k in map) ? map[k] : "{" + k + "}"; });
+}
+function vnd(x) { return Math.round(x).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+function el(id) { return document.getElementById(id); }
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+	function makeCode() {
+	    var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", out = "QL-";
+	    var buf = new Uint32Array(6); crypto.getRandomValues(buf);
+	    for (var i = 0; i < 6; i++) out += chars[buf[i] % chars.length];
+	    return out;
+	}
+	function makeSessionId() {
+	    var chars = "abcdef0123456789", out = "qs_";
+	    var buf = new Uint32Array(16); crypto.getRandomValues(buf);
+	    for (var i = 0; i < 16; i++) out += chars[buf[i] % chars.length];
+	    return out;
+	}
+	function queryValue(keys) {
+	    var q = new URLSearchParams(window.location.search);
+	    for (var i = 0; i < keys.length; i++) {
+	        var v = q.get(keys[i]);
+	        if (v) return v.slice(0, 120);
+	    }
+	    return "";
+	}
+	function externalParticipantId() {
+	    return queryValue(["participant_id", "prolific_pid", "PROLIFIC_PID", "worker_id", "workerId", "pid", "id"]);
+	}
+	function deviceInfo() {
+	    return {
+	        viewport_width: window.innerWidth, viewport_height: window.innerHeight,
+	        screen_width: window.screen ? window.screen.width : "",
+	        screen_height: window.screen ? window.screen.height : "",
+	        timezone_offset_minutes: new Date().getTimezoneOffset(),
+	        platform: navigator.platform || "",
+	        hardware_concurrency: navigator.hardwareConcurrency || "",
+	        max_touch_points: navigator.maxTouchPoints || 0,
+	        user_agent: navigator.userAgent,
+	        referrer: document.referrer || ""
+	    };
+	}
+	function progressHtml(step, total, label) {
+	    var pct = Math.max(0, Math.min(100, Math.round(step / total * 100)));
+	    return '<div class="step-progress"><div class="top"><span>' + label + '</span><span>' + pct + '%</span></div>' +
+	        '<div class="track"><div class="bar" style="width:' + pct + '%"></div></div></div>';
+	}
+	function beliefScore(guess, truth) { return Math.max(0, CONFIG.BELIEF_MAX - Math.abs(guess - truth)); }
+function radioBlock(name, qText, options) {
+    var html = '<div class="q"><p>' + qText + '</p>';
+    options.forEach(function (o) {
+        html += '<label class="opt"><input type="radio" name="' + name + '" value="' + o.v + '"> ' + o.t + '</label>';
+    });
+    return html + '</div>';
+}
+	function getRadio(name) {
+	    var sel = document.querySelector('input[name="' + name + '"]:checked');
+	    return sel ? sel.value : null;
+	}
+	function optionText(options, value) {
+	    var hit = options.filter(function (o) { return o.v === value; })[0];
+	    return hit ? hit.t : "";
+	}
+function selectBlock(id, qText, options, placeholder) {
+    var html = '<div class="q"><p>' + qText + '</p><select id="' + id + '"><option value="">' + (placeholder || "—") + '</option>';
+    options.forEach(function (o) { html += '<option value="' + o.v + '">' + o.t + '</option>'; });
+    return html + '</select></div>';
+	}
+	
+	/* ============================ State ============================ */
+	var STORAGE_KEY = "queue_capacity_exposure_v3_in_progress";
+	var FINAL_STORAGE_KEY = "queue_capacity_exposure_v3_last_completion";
+	function makeInitialState() {
+	    var a = assignTreatment();
+	    return {
+	        lang: "vi", t: null,
+	        treatment: a.treatment,
+	        assignment_source: a.source,
+	        url_treatment: a.url_treatment,
+	        external_id: externalParticipantId(),
+	        session_id: makeSessionId(),
+	        code: makeCode(),
+	        plan: null,           // {types[]}
+	        round: 0,             // 0-based next unpaid or paid round index
+	        load: "normal",
+	        balance: CONFIG.START_BALANCE,
+	        rows: [],             // per-round data
+	        quizFails: 0,
+	        quizAttempts: [],
+	        blurs: 0,
+	        hiddenCount: 0,
+	        hiddenSeconds: 0,
+	        hiddenSince: null,
+	        restoreCount: 0,
+	        restored: false,
+	        instrOpens: 0,
+	        instrSeconds: 0,
+	        roundInstrOpens: 0,
+	        roundInstrSeconds: 0,
+	        pausedMs: 0,
+	        panelOpen: false,
+	        instrOpenAt: null,
+	        decisionLocked: false,
+	        submitting: false,
+	        completed: false,
+	        decisionT0: null,
+	        decisionStartedAt: null,
+	        timerId: null, timeLeft: 0,
+	        beliefs: {}, results: {}, quest: {}, demo: {},
+	        startedAt: new Date().toISOString(),
+	        consentedAt: null
+	    };
+	}
+	var S = makeInitialState();
+
+	function serializableState() {
+	    var copy = {};
+	    Object.keys(S).forEach(function (k) {
+	        if (k !== "t" && k !== "timerId" && k !== "decisionT0" && k !== "hiddenSince" && k !== "instrOpenAt") copy[k] = S[k];
+	    });
+	    return copy;
+	}
+	function saveProgress() {
+	    if (!S.plan || S.completed) return;
+	    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(serializableState())); } catch (e) {}
+	}
+	function clearProgress() {
+	    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+	}
+	function loadProgress() {
+	    try {
+	        var raw = localStorage.getItem(STORAGE_KEY);
+	        return raw ? JSON.parse(raw) : null;
+	    } catch (e) { return null; }
+	}
+	function saveFinalPayload(payload) {
+	    try { localStorage.setItem(FINAL_STORAGE_KEY, payload); } catch (e) {}
+	}
+	function restoreState(saved) {
+	    S = makeInitialState();
+	    Object.keys(saved || {}).forEach(function (k) { S[k] = saved[k]; });
+	    S.t = T[S.lang] || T.vi;
+	    S.timerId = null;
+	    S.decisionT0 = null;
+	    S.hiddenSince = null;
+	    S.submitting = false;
+	    S.decisionLocked = false;
+	    S.panelOpen = false;
+	    S.instrOpenAt = null;
+	    S.pausedMs = 0;
+	    S.restored = true;
+	    S.restoreCount = (S.restoreCount || 0) + 1;
+	    if (S.rows && S.rows.length > S.round) S.round = S.rows.length;
+	    saveProgress();
+	}
+	window.addEventListener("blur", function () { S.blurs += 1; saveProgress(); });
+	document.addEventListener("visibilitychange", function () {
+	    if (document.hidden) {
+	        S.hiddenCount += 1;
+	        S.hiddenSince = Date.now();
+	    } else if (S.hiddenSince) {
+	        var away = Date.now() - S.hiddenSince;
+	        S.hiddenSeconds += Math.round(away / 1000);
+	        S.hiddenSince = null;
+	        // Smartphone fairness: an incoming call or app switch must not silently
+	        // consume the decision window. Time away from the page is credited back
+	        // to the round clock, capped so the timer still protects the session
+	        // against abandonment. Credited time is excluded from response time.
+	        if (S.decisionT0 !== null && !S.decisionLocked) {
+	            S.pausedMs += Math.min(away, HIDDEN_PAUSE_CAP_MS);
+	        }
+	        saveProgress();
+	    }
+	});
+	window.addEventListener("beforeunload", function (e) {
+	    if (S.plan && !S.completed) {
+	        saveProgress();
+	        e.preventDefault();
+	        e.returnValue = "";
+	    }
+});
+
+function buildPlan() {
+    // I.i.d. draws: each case is Type H with probability H_PROB, so the
+    // stated 40% is exactly true at every information set, in every
+    // treatment, even after payoff feedback reveals past case types.
+    var types = [], i;
+    for (i = 0; i < CONFIG.NUM_ROUNDS; i++) {
+        types.push(Math.random() < CONFIG.H_PROB ? "H" : "L");
+    }
+    return { types: types };
+}
+
+	function assignTreatment() {
+	    var q = new URLSearchParams(window.location.search);
+	    var forced = (q.get("t") || "").toLowerCase();
+	    if (forced === "mixed" || forced === "fine" || forced === "state") {
+	        return { treatment: forced === "state" ? "state_dependent" : forced, source: "url_forced", url_treatment: forced };
+	    }
+	    var r = Math.random();
+	    return { treatment: r < 1 / 3 ? "mixed" : (r < 2 / 3 ? "fine" : "state_dependent"), source: "random", url_treatment: forced };
+	}
+
+function displayLabel(r, load) {
+    var type = S.plan.types[r], currentLoad = load || S.load;
+    if (S.treatment === "mixed") return "mixed";
+    if (S.treatment === "fine") return type;
+    return currentLoad === "normal" ? type : "mixed";
+}
+
+function waitCost(load) {
+    return load === "normal" ? CONFIG.WAIT_LOW : CONFIG.WAIT_HIGH;
+}
+
+function loadLabel(load) {
+    return load === "normal" ? S.t.load_normal : S.t.load_strained;
+}
+
+function socialValue(type, served) {
+    if (!served) return 0;
+    return type === "H" ? CONFIG.SOCIAL_VALUE_H : CONFIG.SOCIAL_VALUE_L;
+}
+
+function nextLoadAfter(type, served, currentLoad) {
+    var highBurdenServed = served && type === "H";
+    if (highBurdenServed) {
+        return { nextLoad: "strained", recovered: false, recovery_draw: null };
+    }
+    if (currentLoad === "strained") {
+        var draw = Math.random();
+        return { nextLoad: draw < CONFIG.RECOVERY_PROB ? "normal" : "strained", recovered: draw < CONFIG.RECOVERY_PROB, recovery_draw: draw };
+    }
+    return { nextLoad: "normal", recovered: false, recovery_draw: null };
+}
+
+/* ================= Persistent instructions reference =================
+   The instructions remain available on every screen, exactly as printed
+   instructions stay on the desk in a laboratory session. The panel is
+   built from the same translation keys as the instructions screen, so
+   the two can never diverge, and its content does not condition on the
+   treatment. Consulting it is costless in time: the decision countdown
+   pauses while the panel is open (capped, to bound stalling), so that
+   reference use cannot create differential time pressure across arms.
+   Consultation is logged (counts and seconds, per round and in total)
+   as an attention and comprehension covariate.                        */
+var INSTR_PAUSE_CAP_MS = 120000;
+var HIDDEN_PAUSE_CAP_MS = 120000;
+var instrWatchdog = null;
+
+function instructionParams() {
+    return {
+        N: CONFIG.NUM_ROUNDS, START: CONFIG.START_BALANCE, H: CONFIG.H_VALUE, L: CONFIG.L_VALUE,
+        EV: CONFIG.MIXED_EV, WL: CONFIG.WAIT_LOW, WH: CONFIG.WAIT_HIGH,
+        RP: Math.round(CONFIG.RECOVERY_PROB * 100),
+        HN: CONFIG.H_VALUE - CONFIG.WAIT_LOW,
+        MN: CONFIG.MIXED_EV - CONFIG.WAIT_LOW,
+        HS: CONFIG.H_VALUE - CONFIG.WAIT_HIGH,
+        MS: CONFIG.MIXED_EV - CONFIG.WAIT_HIGH
+    };
+}
+
+function instructionsBodyHtml() {
+    var t = S.t, m = instructionParams();
+    return '<div class="card"><h3>' + t.inst1_title + '</h3><p>' + fmt(t.inst1_body, m) + '</p></div>' +
+        '<div class="card"><h3>' + t.inst2_title + '</h3><p>' + fmt(t.inst2_body, m) + '</p></div>' +
+        '<div class="card"><h3>' + t.inst3_title + '</h3><p>' + fmt(t.inst3_body, m) + '</p>' +
+        '<div class="formula">' + (S.lang === "vi" ? "Điểm = giá trị hồ sơ − chi phí chờ hiện tại" : "Points = case value − current waiting cost") + '</div></div>' +
+        '<div class="card"><h3>' + t.inst4_title + '</h3><p>' + fmt(t.inst4_body, m) + '</p></div>' +
+        '<div class="card"><h3>' + t.inst5_title + '</h3><p>' + fmt(t.inst5_body, m) + '</p></div>';
+}
+
+function ensureInstructionsUI() {
+    if (document.getElementById("instr_fab")) return;
+    var fab = document.createElement("button");
+    fab.id = "instr_fab"; fab.className = "instr-fab"; fab.type = "button";
+    fab.setAttribute("aria-haspopup", "dialog");
+    fab.onclick = openInstructions;
+    document.body.appendChild(fab);
+    var back = document.createElement("div");
+    back.id = "instr_backdrop"; back.className = "instr-backdrop";
+    back.onclick = closeInstructions;
+    document.body.appendChild(back);
+    var panel = document.createElement("div");
+    panel.id = "instr_panel"; panel.className = "instr-panel";
+    panel.setAttribute("role", "dialog");
+    document.body.appendChild(panel);
+    document.addEventListener("keydown", function (e) {
+        if ((e.key === "Escape" || e.keyCode === 27) && S.panelOpen) closeInstructions();
+    });
+}
+
+function refreshInstructionsUI() {
+    if (!S.t) return;
+    ensureInstructionsUI();
+    var fab = el("instr_fab");
+    if (fab) { fab.textContent = S.t.instructions_button; fab.style.display = "block"; }
+}
+
+function currentPauseMs() {
+    return S.panelOpen && S.instrOpenAt !== null ? (performance.now() - S.instrOpenAt) : 0;
+}
+
+function openInstructions() {
+    if (!S.t || S.panelOpen) return;
+    ensureInstructionsUI();
+    S.panelOpen = true;
+    S.instrOpenAt = performance.now();
+    S.instrOpens += 1;
+    S.roundInstrOpens += 1;
+    var panel = el("instr_panel");
+    panel.innerHTML = '<div class="instr-head"><strong>' + S.t.instructions_panel_title + '</strong>' +
+        '<button type="button" id="instr_close" class="secondary">' + S.t.instr_close + '</button></div>' +
+        '<div class="instr-body"><p class="instr-note">' + S.t.instr_panel_note + '</p>' +
+        instructionsBodyHtml() + '</div>';
+    var closeBtn = el("instr_close");
+    if (closeBtn) closeBtn.onclick = closeInstructions;
+    panel.classList.add("open");
+    el("instr_backdrop").classList.add("open");
+    if (document.body.classList) document.body.classList.add("modal-open");
+    instrWatchdog = setInterval(function () {
+        if (currentPauseMs() > INSTR_PAUSE_CAP_MS) closeInstructions();
+    }, 1000);
+    saveProgress();
+}
+
+function closeInstructions() {
+    if (!S.panelOpen) return;
+    var open = currentPauseMs();
+    S.panelOpen = false;
+    S.instrOpenAt = null;
+    if (instrWatchdog) { clearInterval(instrWatchdog); instrWatchdog = null; }
+    S.pausedMs += open;
+    S.instrSeconds += Math.round(open / 1000);
+    S.roundInstrSeconds += Math.round(open / 1000);
+    var panel = el("instr_panel"), back = el("instr_backdrop");
+    if (panel) panel.classList.remove("open");
+    if (back) back.classList.remove("open");
+    if (document.body.classList) document.body.classList.remove("modal-open");
+    saveProgress();
+}
+
+/* ============================ Screens ============================ */
+function show(html) {
+    closeInstructions();
+    el("app").innerHTML = html;
+    window.scrollTo(0, 0);
+    refreshInstructionsUI();
+}
+
+	function screenLanguage() {
+	    show(
+	        progressHtml(1, 8, "Ngôn ngữ / Language") +
+	        '<div class="card"><h2>Ngôn ngữ / Language</h2>' +
+	        '<p>Vui lòng chọn ngôn ngữ. / Please choose your language.</p>' +
+	        '<div class="lang-row">' +
+        '<button id="btn_vi">Tiếng Việt</button>' +
+        '<button id="btn_en" class="secondary">English</button>' +
+        '</div></div>'
+    );
+	    el("btn_vi").onclick = function () { S.lang = "vi"; S.t = T.vi; screenWelcome(); };
+	    el("btn_en").onclick = function () { S.lang = "en"; S.t = T.en; screenWelcome(); };
+	}
+
+	function screenRecovery() {
+	    var t = S.t;
+	    show(
+	        progressHtml(1, 8, t.recover_title) +
+	        '<div class="card"><h2>' + t.recover_title + '</h2>' +
+	        '<p>' + fmt(t.recover_body, { CODE: S.code }) + '</p>' +
+	        '<div class="choices"><button id="resume">' + t.resume + '</button>' +
+	        '<button id="restart" class="secondary">' + t.restart + '</button></div></div>'
+	    );
+	    el("resume").onclick = continueRecoveredSession;
+	    el("restart").onclick = function () {
+	        clearProgress();
+	        S = makeInitialState();
+	        screenLanguage();
+	    };
+	}
+
+	function continueRecoveredSession() {
+	    S.t = T[S.lang] || T.vi;
+	    if (S.rows && S.rows.length > S.round) S.round = S.rows.length;
+	    if (!S.plan) { screenLanguage(); return; }
+	    if (S.round < CONFIG.NUM_ROUNDS) { screenDecision(); return; }
+	    if (!S.beliefs || S.beliefs.belief_points === undefined) { screenBeliefs(); return; }
+	    if (!S.results || S.results.total_points === undefined) { screenResults(); return; }
+	    if (!S.quest || !S.quest.strategy) { screenQuestionnaire(); return; }
+	    if (!S.demo || !S.demo.age) { screenDemographics(); return; }
+	    submitData();
+	}
+	
+	function screenWelcome() {
+	    var t = S.t;
+	    show(
+	        progressHtml(2, 8, t.progress_consent) +
+	        '<div class="card"><h2>' + t.welcome_title + '</h2>' +
+	        '<p>' + fmt(t.welcome_body, { FIXED: vnd(CONFIG.FIXED_VND), CONV: CONFIG.POINTS_PER_10000_VND }) + '</p>' +
+	        '<div class="band quality-note">' + t.welcome_note + '</div>' +
+	        '<button id="next">' + t.welcome_continue + '</button></div>'
+	    );
+	    el("next").onclick = function () {
+	        if (!S.consentedAt) S.consentedAt = new Date().toISOString();
+	        screenInstructions();
+	    };
+	}
+	
+	function screenInstructions() {
+	    var t = S.t;
+	    show(
+	        progressHtml(3, 8, t.progress_instructions) +
+	        instructionsBodyHtml() +
+	        '<div class="band quality-note">' + t.instr_hint + '</div>' +
+	        '<button id="next">' + t.continue_btn + '</button>'
+	    );
+    el("next").onclick = screenQuiz;
+}
+
+	function screenQuiz() {
+	    var t = S.t, p = " " + t.points;
+		    var qs = [
+	        { n: "cq1", q: t.q1, opts: [{ v: "A", t: "120" + p }, { v: "B", t: "30" + p }, { v: "C", t: "0" + p }], correct: "C", explain: t.q1_explain },
+	        { n: "cq2", q: t.q2, opts: [{ v: "A", t: "0" }, { v: "B", t: "48" }, { v: "C", t: "120" }], correct: "C", explain: t.q2_explain },
+	        { n: "cq3", q: t.q3, opts: [{ v: "A", t: "20%" }, { v: "B", t: "40%" }, { v: "C", t: "60%" }], correct: "B", explain: t.q3_explain },
+	        { n: "cq4", q: t.q4, opts: [{ v: "A", t: "0" + p }, { v: "B", t: "48" + p }, { v: "C", t: "120" + p }], correct: "B", explain: t.q4_explain },
+	        { n: "cq5", q: t.q5, opts: [{ v: "A", t: "50" + p }, { v: "B", t: "90" + p }, { v: "C", t: "120" + p }], correct: "A", explain: t.q5_explain },
+	        { n: "cq6", q: t.q6, opts: [{ v: "A", t: S.lang === "vi" ? "Tải bình thường" : "Load becomes normal" }, { v: "B", t: S.lang === "vi" ? "Tải căng" : "Load becomes strained" }, { v: "C", t: S.lang === "vi" ? "Không thay đổi gì" : "Nothing changes" }], correct: "B", explain: t.q6_explain }
+		    ];
+		    var html = progressHtml(4, 8, t.progress_quiz) + '<div class="card"><h3>' + t.quiz_title + '</h3><p>' + t.quiz_intro + '</p>';
+	    qs.forEach(function (q) { html += radioBlock(q.n, q.q, q.opts); });
+	    html += '<p id="qerr" class="error" style="display:none">' + t.quiz_error + '</p>' +
+	        '<div id="quiz_feedback" class="quiz-feedback" style="display:none"></div>' +
+	        '<div class="choices">' +
+        '<button id="next">' + t.continue_btn + '</button>' +
+        '<button id="review" class="secondary" style="display:none">' + t.review_instructions + '</button>' +
+        '</div></div>';
+		    show(html);
+		    el("next").onclick = function () {
+		        var missed = qs.filter(function (q) { return getRadio(q.n) !== q.correct; });
+		        var incorrect = missed.map(function (q) { return q.n; });
+		        S.quizAttempts.push({ at: new Date().toISOString(), incorrect: incorrect, explanations_shown: incorrect.length > 0 });
+		        var allOk = missed.length === 0;
+		        if (allOk) { startRounds(); }
+		        else {
+		            S.quizFails += 1;
+	            el("qerr").style.display = "block";
+	            showQuizFeedback(qs, missed);
+	            el("review").style.display = "inline-block";
+	        }
+	    };
+	    el("review").onclick = screenInstructions;
+	}
+
+	function showQuizFeedback(qs, missed) {
+	    var t = S.t;
+	    var byName = {};
+	    missed.forEach(function (q) { byName[q.n] = true; });
+	    var html = '<h4>' + t.quiz_feedback_title + '</h4>';
+	    qs.filter(function (q) { return byName[q.n]; }).forEach(function (q) {
+	        var selected = getRadio(q.n);
+	        html += '<div class="item"><strong>' + esc(q.q) + '</strong>' +
+	            '<div>' + t.quiz_selected + ' ' + esc(optionText(q.opts, selected) || "—") + '</div>' +
+	            '<div>' + t.quiz_correct + ' ' + esc(optionText(q.opts, q.correct)) + '</div>' +
+	            '<div class="quality-note">' + esc(q.explain) + '</div></div>';
+	    });
+	    var panel = el("quiz_feedback");
+	    panel.innerHTML = html;
+	    panel.style.display = "block";
+	}
+
+	function startRounds() {
+	    S.plan = buildPlan();
+	    S.round = 0;
+	    S.load = "normal";
+	    saveProgress();
+	    screenDecision();
+	}
+
+function screenDecision() {
+    var t = S.t, r = S.round;
+    S.decisionLocked = false;
+    var currentLoad = S.load;
+    var label = displayLabel(r, currentLoad), cost = waitCost(currentLoad);
+    var isMixed = label === "mixed";
+    var value = label === "H" ? CONFIG.H_VALUE : CONFIG.L_VALUE;
+    var evIfServed = isMixed
+        ? CONFIG.MIXED_EV - cost
+        : value - cost;
+    var labelText = isMixed ? t.case_mixed : (label === "H" ? t.case_h : t.case_l);
+    var caseText = isMixed
+        ? fmt(t.mixed_text, { EV: CONFIG.MIXED_EV })
+        : (label === "H" ? fmt(t.h_text, { H: CONFIG.H_VALUE }) : fmt(t.l_text, { L: CONFIG.L_VALUE }));
+    var evLine = isMixed
+        ? fmt(t.ev_line_mixed, { EV: CONFIG.MIXED_EV, W: cost, X: evIfServed })
+        : fmt(t.ev_line_exact, { V: value, W: cost, X: evIfServed });
+
+	    show(
+	        progressHtml(5, 8, t.progress_rounds) +
+	        '<div class="status"><span>' + t.round + ' <strong>' + (r + 1) + ' / ' + CONFIG.NUM_ROUNDS + '</strong></span>' +
+        '<span>' + t.balance + ': <strong>' + S.balance + '</strong></span>' +
+        '<span>' + t.load + ': <strong>' + loadLabel(currentLoad) + '</strong></span>' +
+        '<span class="timer">' + t.time_left + ' <span id="clock">' + CONFIG.DECISION_SECONDS + '</span>s</span></div>' +
+        '<div class="card">' +
+        '<p><span class="case-label">' + labelText + '</span></p>' +
+        '<p>' + caseText + '</p>' +
+        '<div class="formula">' + evLine + '</div>' +
+        '<div class="band">' + t.units_line + ' <strong>' + loadLabel(currentLoad) + '</strong><br>' +
+        fmt(t.charge_line, { W: cost }) + '</div>' +
+        '<p><strong>' + t.choose + '</strong></p>' +
+        '<div class="choices decision-actions">' +
+        '<button id="btn_send">' + t.send + '</button>' +
+        '<button id="btn_not" class="secondary">' + t.not_send + '</button>' +
+        '</div>' +
+        '<p class="muted">' + t.timeout_note + '</p>' +
+        '</div>'
+    );
+	
+	    S.decisionT0 = performance.now();
+	    S.decisionStartedAt = new Date().toISOString();
+	    S.roundInstrOpens = 0;
+	    S.roundInstrSeconds = 0;
+	    S.pausedMs = 0;
+	    var blursBefore = S.blurs;
+	    S.timeLeft = CONFIG.DECISION_SECONDS;
+	    saveProgress();
+    S.timerId = setInterval(function () {
+        // Never expire while the page is hidden; mobile browsers freeze and
+        // throttle timers, and the away time is credited on return.
+        if (document.hidden) return;
+        // Derive remaining time from the elapsed clock so background-tab
+        // timer throttling cannot stretch the decision window.
+        var elapsed = Math.floor((performance.now() - S.decisionT0 - S.pausedMs - currentPauseMs()) / 1000);
+        S.timeLeft = Math.max(0, CONFIG.DECISION_SECONDS - elapsed);
+        var c = el("clock");
+        if (c) c.textContent = S.timeLeft;
+        if (S.timeLeft <= 0) { decide(null, true, blursBefore); }
+    }, 500);
+
+    el("btn_send").onclick = function () { decide("send", false, blursBefore); };
+    el("btn_not").onclick = function () { decide("not_send", false, blursBefore); };
+}
+
+function decide(choice, timedOut, blursBefore) {
+    if (S.decisionLocked) return;
+    S.decisionLocked = true;
+    clearInterval(S.timerId);
+    var sendBtn = el("btn_send"), notBtn = el("btn_not");
+    if (sendBtn) sendBtn.disabled = true;
+    if (notBtn) notBtn.disabled = true;
+    var r = S.round;
+    var pausedTotal = S.pausedMs + currentPauseMs();
+    var rt = timedOut ? null : Math.round(performance.now() - S.decisionT0 - pausedTotal) / 1000;
+    var decision = timedOut ? "not_send" : choice;
+    var type = S.plan.types[r], currentLoad = S.load, cost = waitCost(currentLoad);
+    var served = false, points = 0;
+    if (decision === "send") {
+        served = true;
+        points = (type === "H" ? CONFIG.H_VALUE : CONFIG.L_VALUE) - cost;
+    }
+    var transition = nextLoadAfter(type, served, currentLoad);
+    var highBurdenServed = served && type === "H";
+    var noncapacityValue = socialValue(type, served);
+    var fatigueCost = currentLoad === "strained" ? CONFIG.FATIGUE_COST_HIGH : 0;
+    var socialScore = noncapacityValue - fatigueCost;
+    S.balance += points;
+	    S.rows.push({
+	        round: r + 1, actual_type: type, display_label: displayLabel(r, currentLoad),
+	        capacity_before: currentLoad, wait_cost: cost,
+	        decision_started_at: S.decisionStartedAt,
+	        decision: decision, timed_out: timedOut, rt_seconds: rt,
+        blur_count: S.blurs - blursBefore,
+        instr_opens: S.roundInstrOpens,
+        instr_seconds: S.roundInstrSeconds + Math.round(currentPauseMs() / 1000),
+        served: served, high_burden_served: highBurdenServed,
+        recovered: transition.recovered, recovery_draw: transition.recovery_draw,
+        capacity_after: transition.nextLoad,
+        points: points, social_value: noncapacityValue,
+        fatigue_cost: fatigueCost, social_score: socialScore,
+        theorem_cost: fatigueCost - noncapacityValue,
+        balance_after: S.balance
+	    });
+	    S.load = transition.nextLoad;
+	    saveProgress();
+	    screenFeedback(timedOut, decision, served, points, transition.nextLoad);
+}
+
+function screenFeedback(timedOut, decision, served, points, nextLoad) {
+    var t = S.t, msg, cls;
+    var m = { X: points, LOAD: loadLabel(nextLoad) };
+    if (timedOut) { msg = fmt(t.fb_timeout, m); cls = "feedback-zero"; }
+    else if (decision === "not_send") { msg = fmt(t.fb_notsent, m); cls = "feedback-zero"; }
+    else if (served) { msg = fmt(t.fb_served, m); cls = points >= 0 ? "feedback-good" : "feedback-zero"; }
+    else { msg = fmt(t.fb_unserved, m); cls = "feedback-zero"; }
+    var last = S.round === CONFIG.NUM_ROUNDS - 1;
+    show(
+        '<div class="status"><span>' + t.round + ' <strong>' + (S.round + 1) + ' / ' + CONFIG.NUM_ROUNDS + '</strong></span>' +
+        '<span>' + t.balance + ': <strong>' + S.balance + '</strong></span></div>' +
+        '<div class="card"><p class="' + cls + '">' + msg + '</p>' +
+        '<button id="next">' + (last ? t.to_beliefs : t.next_round) + '</button></div>'
+    );
+	    el("next").onclick = function () {
+	        S.round += 1;
+	        saveProgress();
+	        if (S.round < CONFIG.NUM_ROUNDS) screenDecision(); else screenBeliefs();
+	    };
+}
+
+	function screenBeliefs() {
+	    var t = S.t, N = CONFIG.NUM_ROUNDS;
+	    show(
+	        progressHtml(6, 8, t.progress_beliefs) +
+	        '<div class="card"><h3>' + t.beliefs_title + '</h3>' +
+        '<div class="band">' + fmt(t.beliefs_intro, { M: CONFIG.BELIEF_MAX }) + '</div>' +
+        '<div class="q"><p>' + fmt(t.belief1, { N: N }) + '</p><input type="number" inputmode="numeric" autocomplete="off" id="b1" min="0" max="' + N + '"></div>' +
+        '<div class="q"><p>' + fmt(t.belief2, { N: N }) + '</p><input type="number" inputmode="numeric" autocomplete="off" id="b2" min="0" max="' + N + '"></div>' +
+        '<p id="berr" class="error" style="display:none">' + t.belief_error + '</p>' +
+        '<button id="next">' + t.belief_submit + '</button></div>'
+    );
+    el("next").onclick = function () {
+        var b1 = parseInt(el("b1").value, 10), b2 = parseInt(el("b2").value, 10);
+        var N = CONFIG.NUM_ROUNDS;
+        if (isNaN(b1) || b1 < 0 || b1 > N || isNaN(b2) || b2 < 0 || b2 > N) {
+            el("berr").style.display = "block"; return;
+        }
+        var actualH = S.plan.types.filter(function (x) { return x === "H"; }).length;
+        var actualHServed = S.rows.filter(function (x) { return x.high_burden_served; }).length;
+	        var bp = beliefScore(b1, actualH) + beliefScore(b2, actualHServed);
+	        S.beliefs = { belief_h: b1, belief_h_served: b2, actual_h: actualH, actual_h_served: actualHServed, belief_points: bp };
+	        saveProgress();
+	        screenResults();
+	    };
+	}
+
+function screenResults() {
+    var t = S.t;
+    var market = S.balance, bp = S.beliefs.belief_points, total = market + bp;
+    var bonus = Math.max(0, total) / CONFIG.POINTS_PER_10000_VND * 10000;
+    var hServed = S.rows.filter(function (x) { return x.high_burden_served; }).length;
+    var lServed = S.rows.filter(function (x) { return x.served && x.actual_type === "L"; }).length;
+    var strainedRounds = S.rows.filter(function (x) { return x.capacity_before === "strained"; }).length;
+    var socialScore = S.rows.reduce(function (acc, x) { return acc + x.social_score; }, 0);
+    var theoremCost = S.rows.reduce(function (acc, x) { return acc + x.theorem_cost; }, 0);
+	    S.results = {
+	        market_points: market, belief_points: bp, total_points: total, bonus_vnd: Math.round(bonus),
+	        h_served: hServed, l_served: lServed, strained_rounds: strainedRounds,
+	        social_score: socialScore, theorem_cost: theoremCost
+	    };
+	    saveProgress();
+	    show(
+	        progressHtml(6, 8, t.progress_beliefs) +
+	        '<div class="card"><h3>' + t.results_title + '</h3>' +
+        '<div class="metric-grid">' +
+        '<div class="metric"><span>' + t.r_market + '</span><strong>' + market + '</strong></div>' +
+        '<div class="metric"><span>' + t.r_belief + '</span><strong>' + bp + '</strong></div>' +
+        '<div class="metric"><span>' + t.r_total + '</span><strong>' + total + '</strong></div>' +
+        '</div>' +
+        '<p>' + t.r_bonus + '</p><div class="formula">' + vnd(bonus) + ' VND</div>' +
+        (total < 0 ? '<p class="muted">' + t.r_floor + '</p>' : '') +
+        '<button id="next">' + t.continue_btn + '</button></div>'
+    );
+    el("next").onclick = screenQuestionnaire;
+}
+
+function likertOpts(lo, hi) {
+    var out = [];
+    for (var i = lo; i <= hi; i++) out.push({ v: String(i), t: String(i) });
+    return out;
+}
+
+	function screenQuestionnaire() {
+	    var t = S.t;
+	    var ynu = [{ v: "yes", t: t.yes }, { v: "no", t: t.no }, { v: "unsure", t: t.unsure }];
+	    show(
+	        progressHtml(7, 8, t.progress_survey) +
+	        '<div class="card"><h3>' + t.quest_title + '</h3><p class="muted">' + t.quest_intro + '</p>' +
+	        selectBlock("lk1", t.lik1, likertOpts(1, 7)) +
+	        selectBlock("lk2", t.lik2, likertOpts(1, 7)) +
+	        selectBlock("lk3", t.lik3, likertOpts(1, 7)) +
+	        selectBlock("attn", t.attention, likertOpts(1, 7)) +
+	        radioBlock("understood", t.understood, ynu) +
+        radioBlock("believed", t.believed, ynu) +
+        '<div class="q"><p>' + t.strategy + '</p><textarea id="strategy"></textarea></div>' +
+        '<div class="q"><p>' + t.confusing + '</p><textarea id="confusing"></textarea></div>' +
+        '<p id="qerr2" class="error" style="display:none">' + t.form_error + '</p>' +
+        '<button id="next">' + t.continue_btn + '</button></div>'
+    );
+    el("next").onclick = function () {
+	        var v = {
+	            label_difficulty: el("lk1").value, label_effect: el("lk2").value, waiting_effect: el("lk3").value,
+	            attention_check: el("attn").value, attention_passed: el("attn").value === "4",
+	            understood: getRadio("understood"), believed: getRadio("believed"),
+	            strategy: el("strategy").value.trim(), confusing: el("confusing").value.trim()
+	        };
+	        if (!v.label_difficulty || !v.label_effect || !v.waiting_effect || !v.attention_check || !v.understood || !v.believed || !v.strategy) {
+	            el("qerr2").style.display = "block"; return;
+	        }
+	        S.quest = v;
+	        saveProgress();
+	        screenDemographics();
+	    };
+	}
+
+function screenDemographics() {
+	    var t = S.t;
+	    show(
+	        progressHtml(7, 8, t.progress_survey) +
+	        '<div class="card"><h3>' + t.demo_title + '</h3><p class="muted">' + t.demo_intro + '</p>' +
+        '<div class="q"><p>' + t.age + '</p><input type="number" inputmode="numeric" autocomplete="off" id="age" min="16" max="99"></div>' +
+        radioBlock("gender", t.gender, [
+            { v: "female", t: t.female }, { v: "male", t: t.male },
+            { v: "other", t: t.other }, { v: "prefer_not", t: t.prefer_not }]) +
+        selectBlock("field", t.field, [
+            { v: "econ_business", t: t.f1 }, { v: "stem", t: t.f2 },
+            { v: "social_science", t: t.f3 }, { v: "humanities", t: t.f4 }, { v: "other", t: t.f5 }]) +
+        selectBlock("year", t.year, [
+            { v: "1", t: t.y1 }, { v: "2", t: t.y2 }, { v: "3", t: t.y3 }, { v: "4", t: t.y4 }, { v: "5", t: t.y5 }]) +
+        radioBlock("prior", t.prior, [{ v: "yes", t: t.yes }, { v: "no", t: t.no }]) +
+        selectBlock("risk", t.risk, likertOpts(0, 10)) +
+        selectBlock("patience", t.patience, likertOpts(0, 10)) +
+        '<p id="derr" class="error" style="display:none">' + t.form_error + '</p>' +
+        '<button id="next">' + t.submit_all + '</button></div>'
+    );
+    el("next").onclick = function () {
+        var age = parseInt(el("age").value, 10);
+        var v = {
+            age: age, gender: getRadio("gender"), field: el("field").value,
+            year: el("year").value, prior_experiments: getRadio("prior"),
+            gps_risk: el("risk").value, gps_patience: el("patience").value
+        };
+        if (isNaN(age) || age < 16 || age > 99 || !v.gender || !v.field || !v.year || !v.prior_experiments || v.gps_risk === "" || v.gps_patience === "") {
+            el("derr").style.display = "block"; return;
+        }
+	        el("next").disabled = true;
+	        S.demo = v;
+	        saveProgress();
+	        submitData();
+	    };
+	}
+	
+	function hiddenSecondsNow() {
+	    return S.hiddenSeconds + (S.hiddenSince ? Math.round((Date.now() - S.hiddenSince) / 1000) : 0);
+	}
+
+	function buildPayload() {
+	    var finished = new Date();
+	    return {
+	        session_id: S.session_id,
+	        participant_code: S.code,
+	        external_id: S.external_id,
+	        treatment: S.treatment,
+	        assignment_source: S.assignment_source,
+	        url_treatment: S.url_treatment,
+	        language: S.lang,
+	        started_at: S.startedAt,
+	        consented_at: S.consentedAt,
+	        finished_at: finished.toISOString(),
+	        elapsed_seconds: Math.round((finished.getTime() - new Date(S.startedAt).getTime()) / 1000),
+	        comprehension_failures: S.quizFails,
+	        comprehension_attempt_log: S.quizAttempts,
+	        total_blurs: S.blurs,
+	        hidden_count: S.hiddenCount,
+	        hidden_seconds: hiddenSecondsNow(),
+	        instr_opens_total: S.instrOpens,
+	        instr_seconds_total: S.instrSeconds + Math.round(currentPauseMs() / 1000),
+	        restored: S.restored,
+	        restore_count: S.restoreCount,
+	        endpoint_configured: CONFIG.ENDPOINT_URL.indexOf("http") === 0,
+	        device: deviceInfo(),
+	        beliefs: S.beliefs,
+	        results: S.results,
+        questionnaire: S.quest,
+        demographics: S.demo,
+        rounds: S.rows
+    };
+}
+
+	function submitData() {
+    if (S.submitting) return;
+    S.submitting = true;
+	    var t = S.t;
+	    show(progressHtml(8, 8, t.progress_done) + '<div class="card"><p>' + t.sending + '</p></div>');
+    var payload = JSON.stringify(buildPayload());
+    var finish = function () { screenDone(payload); };
+    if (CONFIG.ENDPOINT_URL.indexOf("http") === 0) {
+        // Apps Script web apps accept cross-origin POSTs with a simple
+        // text/plain body; the response is opaque, so we show the fallback
+        // data on the final screen regardless.
+        fetch(CONFIG.ENDPOINT_URL, {
+            method: "POST", mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: payload
+        }).then(finish).catch(finish);
+        setTimeout(finish, 6000); // safety: never strand the participant
+    } else {
+        finish();
+    }
+}
+
+var doneShown = false;
+function screenDone(payload) {
+    if (doneShown) return;
+    doneShown = true;
+	    S.completed = true;
+	    saveFinalPayload(payload);
+	    clearProgress();
+	    var t = S.t;
+	    show(
+	        progressHtml(8, 8, t.progress_done) +
+	        '<div class="card"><h3>' + t.done_title + '</h3>' +
+	        '<p>' + t.done_body + '</p>' +
+	        '<p><code class="big">' + S.code + '</code></p>' +
+	        '<p>' + fmt(t.done_keep, { FIXED: vnd(CONFIG.FIXED_VND), BONUS: vnd(S.results.bonus_vnd) }) + '</p>' +
+	        '<div class="band quality-note">' + (CONFIG.ENDPOINT_URL.indexOf("http") === 0 ? t.upload_attempted : t.upload_missing) + '</div>' +
+	        '<details><summary class="muted">' + t.fallback + '</summary>' +
+	        '<textarea id="raw" style="min-height:120px">' + esc(payload) + '</textarea>' +
+	        '<p><button id="copy" class="secondary">' + t.copy + '</button> <span id="copied" class="muted" style="display:none">' + t.copied + '</span></p></details>' +
+	        '</div>'
+	    );
+	    el("copy").onclick = function () {
+	        var ta = el("raw");
+	        ta.focus();
+	        if (ta.setSelectionRange) { ta.select(); ta.setSelectionRange(0, 999999); } else { ta.select(); }
+	        var ok = false;
+	        try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+	        if (!ok && navigator.clipboard && navigator.clipboard.writeText) {
+	            navigator.clipboard.writeText(ta.value);
+	        }
+	        el("copied").style.display = "inline";
+	    };
+	}
+
+	/* ============================ Boot ============================ */
+	var savedProgress = loadProgress();
+	if (savedProgress && savedProgress.plan && !savedProgress.completed) {
+	    restoreState(savedProgress);
+	    screenRecovery();
+	} else {
+	    screenLanguage();
+	}
+	</script>
+</body>
+</html>
