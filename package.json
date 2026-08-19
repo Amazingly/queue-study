@@ -1,0 +1,11 @@
+{
+  "name": "queue-study",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Queue Decision Study \u2014 public GitHub Pages interface. Server-authoritative: Apps Script runs the experiment; this client only displays it.",
+  "scripts": {
+    "test": "node --test",
+    "release-check": "node tools/release-check.mjs"
+  }
+}
