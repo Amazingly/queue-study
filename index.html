@@ -13,11 +13,16 @@
   CSP (§4.5): all scripts and styles are external and same-origin; the
   page performs no fetch/XHR (connect-src 'none') — the only network
   path is a form post into a hidden iframe targeted at the Apps Script
-  endpoint. form-action additionally lists script.googleusercontent.com
-  because Apps Script serves /exec responses through that redirect
-  domain and some engines evaluate form-action across redirects; §4.5
-  requires the final policy to be tested against the production
-  deployment during the technical pilot.
+  endpoint.
+
+  §4.5 required this policy to be tested against the production
+  deployment rather than assumed. It was, on 2026-08-19. The measured
+  behaviour: /exec redirects to a PER-DEPLOYMENT user-content host of the
+  form https://n-<hash>-script.googleusercontent.com, not to the bare
+  googleusercontent host, so frame-src and form-action now also carry the
+  wildcard. Chrome raised no violation on the narrower policy, but the
+  wildcard removes the dependence on how each engine treats redirect hops
+  — Safari and Firefox on student phones are not Chrome.
 -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
@@ -25,8 +30,8 @@
   style-src 'self';
   img-src 'self' data:;
   connect-src 'none';
-  frame-src https://script.google.com https://script.googleusercontent.com;
-  form-action https://script.google.com https://script.googleusercontent.com;
+  frame-src https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com;
+  form-action https://script.google.com https://script.googleusercontent.com https://*.googleusercontent.com;
   object-src 'none';
   base-uri 'none';
 ">
