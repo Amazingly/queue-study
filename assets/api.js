@@ -26,7 +26,7 @@
  * each attempt uses a fresh nonce, echoed in that attempt's receipt.
  */
 
-import { PUBLIC_CONFIG, API_RESPONSE_ORIGINS } from "./config.js";
+import { PUBLIC_CONFIG, API_RESPONSE_ORIGINS, isAllowedResponseOrigin } from "./config.js";
 
 export const RETRYABLE_CODES = Object.freeze(["API_TIMEOUT", "SERVER_BUSY", "NETWORK_ERROR"]);
 
@@ -70,7 +70,7 @@ export function acceptMessage(pending, event, allowedOrigins = API_RESPONSE_ORIG
   if (message.request_id !== pending.requestId) return false;
   if (message.nonce !== pending.nonce) return false;
   const fromOurFrame = pending.iframeWindow && event.source === pending.iframeWindow;
-  const fromKnownOrigin = allowedOrigins.indexOf(event.origin) !== -1;
+  const fromKnownOrigin = isAllowedResponseOrigin(event.origin, allowedOrigins);
   return Boolean(fromOurFrame || fromKnownOrigin);
 }
 
@@ -103,7 +103,16 @@ export function apiAttempt(action, payload, requestId, timeoutMs) {
     const iframe = document.createElement("iframe");
     iframe.name = frameName;
     iframe.hidden = true;
-    iframe.setAttribute("sandbox", "allow-forms allow-scripts");
+    /* allow-same-origin is required, not optional. Apps Script serves the
+     * /exec response inside its own userCodeAppPanel wrapper frame on a
+     * per-deployment googleusercontent host; in a sandbox without
+     * allow-same-origin that wrapper cannot initialise, so the receipt
+     * script never runs and every request failed with API_TIMEOUT
+     * (measured against the production deployment, 2026-08-19). The frame
+     * is cross-origin, so allow-same-origin grants it its own real origin
+     * and never any access to this page. Top-level navigation, popups and
+     * downloads stay blocked, which is what the sandbox is here for. */
+    iframe.setAttribute("sandbox", "allow-forms allow-scripts allow-same-origin");
     iframe.referrerPolicy = "no-referrer";
 
     const form = document.createElement("form");
