@@ -3,43 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow, noarchive">
+<!--
+  Queue Decision Study — public interface (GitHub Pages).
+  Architecture (revision plan §1): GitHub displays the experiment;
+  Google Apps Script runs it; Google Sheets records it. This page holds
+  no treatment assignment, no hidden case types, no recovery draws, no
+  payoff arithmetic, and no completion-code generation.
+
+  CSP (§4.5): all scripts and styles are external and same-origin; the
+  page performs no fetch/XHR (connect-src 'none') — the only network
+  path is a form post into a hidden iframe targeted at the Apps Script
+  endpoint. form-action additionally lists script.googleusercontent.com
+  because Apps Script serves /exec responses through that redirect
+  domain and some engines evaluate form-action across redirects; §4.5
+  requires the final policy to be tested against the production
+  deployment during the technical pilot.
+-->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self';
+  img-src 'self' data:;
+  connect-src 'none';
+  frame-src https://script.google.com https://script.googleusercontent.com;
+  form-action https://script.google.com https://script.googleusercontent.com;
+  object-src 'none';
+  base-uri 'none';
+">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
-<title>Queue Decision Study — not yet open</title>
-<style>
-  :root { color-scheme: light; }
-  body { margin:0; padding:2rem 1rem; background:#f8fafc; color:#0f172a;
-         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-         line-height:1.6; }
-  .card { max-width:36rem; margin:2rem auto; background:#fff; border:1px solid #e2e8f0;
-          border-radius:12px; padding:1.75rem 1.5rem; }
-  h1 { font-size:1.25rem; margin:0 0 .75rem; }
-  p { margin:.6rem 0; }
-  .tag { display:inline-block; background:#fef3c7; color:#92400e; border-radius:999px;
-         padding:.2rem .7rem; font-size:.8rem; font-weight:600; margin-bottom:.75rem; }
-  hr { border:0; border-top:1px solid #e2e8f0; margin:1.75rem 0; }
-  .muted { color:#64748b; font-size:.92rem; }
-</style>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Queue Decision Study</title>
+<link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-  <div class="card">
-    <span class="tag">Chưa mở / Not open</span>
-
-    <h1>Nghiên cứu về quyết định gửi hồ sơ</h1>
-    <p><strong>Nghiên cứu hiện chưa mở.</strong> Trang này chưa nhận người tham gia. Vui lòng không sử dụng trang này để tham gia nghiên cứu.</p>
-    <p>Nếu giảng viên của bạn đã mời bạn tham gia, hãy chờ đến khi nhóm nghiên cứu thông báo nghiên cứu đã mở, kèm mã tham gia.</p>
-    <p class="muted">Mọi câu hỏi: nhóm nghiên cứu — quangn@gmail.com</p>
-
-    <hr>
-
-    <h1>Queue Decision Study</h1>
-    <p><strong>This study is not open.</strong> This page is not currently accepting participants. Please do not use this page to take part.</p>
-    <p>If your instructor has invited you, please wait until the research team announces that the study is open and provides a session code.</p>
-    <p class="muted">Questions: research team — quangn@gmail.com</p>
-
-    <hr>
-    <p class="muted">A previous demonstration version was published at this address for testing. It has been withdrawn and any responses entered into it were not recorded and are not used in any research.</p>
-  </div>
+<div class="shell" id="app">
+  <noscript>
+    <div class="card">
+      <p>Nghiên cứu này cần JavaScript. Vui lòng bật JavaScript rồi tải lại trang.</p>
+      <p>This study requires JavaScript. Please enable JavaScript and reload the page.</p>
+    </div>
+  </noscript>
+</div>
+<script type="module" src="assets/app.js"></script>
 </body>
 </html>
