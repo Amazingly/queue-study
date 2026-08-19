@@ -132,6 +132,29 @@ test("index.html enforces CSP, no-referrer, and noindex (§4.4–§4.5)", () => 
   assert.doesNotMatch(html, /<script>[^<]/, "no inline scripts under script-src 'self'");
 });
 
+/* Regression guards for the two transport defects measured against the
+ * production deployment on 2026-08-19. Either one alone makes every
+ * request fail with API_TIMEOUT, which the participant sees only as
+ * "the connection is slow". */
+test("the response iframe keeps allow-same-origin so the receipt script runs (§4.6)", () => {
+  const api = fs.readFileSync(path.join(root, "assets/api.js"), "utf8");
+  const sandbox = api.match(/setAttribute\("sandbox",\s*"([^"]+)"\)/);
+  assert.ok(sandbox, "the response iframe must declare an explicit sandbox");
+  const tokens = sandbox[1].split(/\s+/);
+  assert.ok(tokens.includes("allow-scripts"), "the receipt script must be able to run");
+  assert.ok(tokens.includes("allow-same-origin"),
+    "without allow-same-origin the Apps Script wrapper cannot initialise and no receipt is ever posted");
+  assert.ok(!tokens.includes("allow-top-navigation"), "the framed response must not navigate the study page");
+});
+
+test("both framing pages allow the per-deployment Apps Script user-content host (§4.5)", () => {
+  for (const file of ["index.html", "host/index.html"]) {
+    const html = fs.readFileSync(path.join(root, file), "utf8");
+    assert.match(html, /frame-src[^;]*https:\/\/\*\.googleusercontent\.com/, file + " frame-src");
+    assert.match(html, /form-action[^;]*https:\/\/\*\.googleusercontent\.com/, file + " form-action");
+  }
+});
+
 test("robots.txt disallows all crawling (§4.4)", () => {
   const robots = fs.readFileSync(path.join(root, "robots.txt"), "utf8");
   assert.match(robots, /User-agent: \*/);

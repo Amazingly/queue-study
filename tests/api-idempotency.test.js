@@ -58,6 +58,38 @@ test("acceptMessage rejects an unknown origin from a foreign window even with a 
   assert.equal(acceptMessage(PENDING, event), false);
 });
 
+/* Regression: the production deployment posts receipts from a
+ * per-deployment user-content host, not from the bare googleusercontent
+ * host, and event.source is Apps Script's inner wrapper frame rather than
+ * our iframe's contentWindow. Matching the exact list alone rejected every
+ * real receipt and every request failed with API_TIMEOUT. */
+test("acceptMessage accepts the per-deployment Apps Script user-content origin", () => {
+  const observed = "https://n-pm7pzo2jyyuteoaq5zrwgqntpcz3jm5vkrql7vi-0lu-script.googleusercontent.com";
+  const event = { data: receipt({}).data, origin: observed, source: { innerWrapperFrame: true } };
+  assert.equal(acceptMessage(PENDING, event), true);
+});
+
+test("acceptMessage rejects googleusercontent lookalikes and still requires the nonce", () => {
+  const lookalikes = [
+    "https://googleusercontent.com.evil.example",
+    "https://evil.example/x.googleusercontent.com",
+    "http://n-abc-script.googleusercontent.com",      // not https
+    "https://a.b-script.googleusercontent.com",       // extra label
+    "https://n-abc-script.googleusercontent.com:8443" // port
+  ];
+  for (const origin of lookalikes) {
+    const event = { data: receipt({}).data, origin, source: { other: true } };
+    assert.equal(acceptMessage(PENDING, event), false, origin);
+  }
+  // A genuine user-content origin still cannot substitute for the nonce.
+  const wrongNonce = {
+    data: receipt({ nonce: "stolen" }).data,
+    origin: "https://n-abc-script.googleusercontent.com",
+    source: { other: true }
+  };
+  assert.equal(acceptMessage(PENDING, wrongNonce), false);
+});
+
 test("retry delays are positive, non-decreasing, and bounded", () => {
   let prev = 0;
   for (let i = 0; i < 10; i++) {
