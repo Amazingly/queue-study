@@ -1,0 +1,58 @@
+name: queue-study-pages
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: queue-study-pages
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run client tests
+        run: npm test
+
+  deploy:
+    # A merge never changes the live experiment automatically. From GitHub,
+    # select Actions -> queue-study-pages -> Run workflow on main after the
+    # release metadata and ethics text have been completed.
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Enforce production release prerequisites
+        run: npm run release-check
+      - name: Build minimal public artifact
+        run: |
+          rm -rf dist
+          mkdir -p dist
+          cp index.html privacy.html withdrawal.html robots.txt dist/
+          cp -R assets join host dist/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
