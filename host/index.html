@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!--
+  Classroom host control (on-demand sessions). The coauthor opens this
+  page from a private link containing her host key. She taps "Open a
+  session" in any class, with no advance planning, and projects the code
+  and QR it shows. It exposes no treatment, no hidden state, and no
+  participant data — only session open/close and running counts.
+
+  Same transport and CSP posture as the participant app: no fetch/XHR
+  (connect-src 'none'); requests go through a hidden form posted to the
+  Apps Script endpoint, which replies by postMessage. The QR encoder is
+  self-hosted (assets/qrcode.js) so it runs under script-src 'self'.
+-->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self';
+  img-src 'self' data:;
+  connect-src 'none';
+  frame-src https://script.google.com https://script.googleusercontent.com;
+  form-action https://script.google.com https://script.googleusercontent.com;
+  object-src 'none';
+  base-uri 'none';
+">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Queue Study — Classroom Control</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="shell" id="host">
+  <noscript><div class="card"><p>This control page requires JavaScript.</p></div></noscript>
+</div>
+<script src="../assets/qrcode.js"></script>
+<script type="module" src="../assets/host.js"></script>
+</body>
+</html>
