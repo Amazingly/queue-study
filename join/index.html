@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!--
+  Shared classroom gateway (/join/). This is the URL encoded in the ONE
+  permanent QR code displayed in every lecture. It is a front door, not
+  an invitation: the application asks for the six-digit lecture code
+  shown by the lecturer, and the server assigns each consenting student
+  their own session, treatment, and frozen sequence. A script-free
+  meta refresh forwards to the application shell with the gateway entry
+  flag; the link below covers browsers with refresh disabled.
+-->
+<meta http-equiv="refresh" content="0; url=../?entry=join">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none';">
+<title>Queue Decision Study — Join</title>
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+<div class="shell">
+  <div class="card">
+    <p>Đang mở trang nghiên cứu… / Opening the study…</p>
+    <p><a href="../?entry=join">Bấm vào đây nếu trang không tự chuyển. / Tap here if you are not redirected.</a></p>
+  </div>
+</div>
+</body>
+</html>
