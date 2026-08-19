@@ -29,7 +29,7 @@ jobs:
 
   deploy:
     # A merge never changes the live experiment automatically. From GitHub,
-    # select Actions -> queue-study-pages -> Run workflow on main after the
+    # select Actions → queue-study-pages → Run workflow on main after the
     # release metadata and ethics text have been completed.
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     needs: test
